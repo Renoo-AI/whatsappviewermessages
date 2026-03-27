@@ -1,0 +1,131 @@
+:host {
+  display: block;
+  height: 100vh;
+}
+
+/* Custom scrollbar for chat area */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Animations */
+.animate-in {
+  animation-duration: 0.5s;
+  animation-fill-mode: both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.fade-in { animation-name: fadeIn; }
+.zoom-in { animation-name: zoomIn; }
+
+/* Material Icon sizing fixes */
+.mat-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.text-sm .mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+/* WhatsApp specific bubble tweaks */
+.group:hover .timestamp {
+  opacity: 1;
+}
+
+/* 2026 Style Refinements */
+.message-bubble {
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+}
+
+.sent-bubble {
+  background-color: #d9fdd3 !important;
+}
+
+.received-bubble {
+  background-color: #ffffff !important;
+}
+
+/* Link styling */
+a {
+  color: #027eb5;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* System message styling (used for dates and alerts) */
+.system-message {
+  background-color: #ffffff;
+  color: #54656f;
+  font-size: 12.5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  max-width: fit-content;
+  text-align: center;
+  margin: 12px auto;
+  display: inline-block;
+  line-height: 1;
+}
+
+/* Custom scrollbar for timeline */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #dfe5e7;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #ced5d7;
+}
+
+@keyframes slide-in-from-left {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-in {
+  animation-fill-mode: both;
+}
+
+.slide-in-from-left {
+  animation-name: slide-in-from-left;
+}

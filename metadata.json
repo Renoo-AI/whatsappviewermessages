@@ -1,0 +1,5 @@
+{
+  "name": "WhatsApp Chat Viewer",
+  "description": "A polished WhatsApp Web-style chat history viewer that parses exported .txt files locally in the browser.",
+  "requestFramePermissions": []
+}

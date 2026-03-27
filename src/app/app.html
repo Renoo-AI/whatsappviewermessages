@@ -1,0 +1,355 @@
+<div class="min-h-screen bg-[#f0f2f5] font-sans text-[#111b21] flex flex-col overflow-hidden">
+  
+  <!-- Empty State / Upload -->
+  @if (!hasUploaded()) {
+    <div class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+      <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-10 space-y-8 animate-in fade-in zoom-in duration-500">
+        <div class="flex justify-center">
+          <div class="w-20 h-20 bg-[#25d366] rounded-full flex items-center justify-center shadow-lg">
+            <mat-icon class="text-white text-4xl leading-none h-auto w-auto">chat</mat-icon>
+          </div>
+        </div>
+        
+        <div class="space-y-2">
+          <h1 class="text-2xl font-bold text-[#41525d]">WhatsApp Chat Viewer</h1>
+          <p class="text-[#667781]">Revisit your memories in a familiar interface. Upload your exported .txt chat file to get started.</p>
+        </div>
+
+        <div class="space-y-4">
+          <label class="block w-full cursor-pointer bg-[#00a884] hover:bg-[#008f6f] text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md active:scale-95 transform duration-150">
+            <span>Choose Chat File</span>
+            <input type="file" class="hidden" (change)="onFileSelected($event)" accept=".txt">
+          </label>
+          
+          <button (click)="loadDemoData()" class="w-full py-2 text-[#00a884] font-medium hover:underline transition-all">
+            Try with demo data
+          </button>
+        </div>
+
+        <div class="pt-4 border-t border-gray-100">
+          <p class="text-xs text-[#8696a0]">Your data stays local. We don't upload your chat to any server.</p>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <!-- Main Chat Interface -->
+    <div class="flex h-screen w-full max-w-[1600px] mx-auto bg-white shadow-2xl overflow-hidden md:my-4 md:h-[calc(100vh-32px)] md:rounded-lg">
+      
+      <!-- Sidebar (Desktop) -->
+      <div class="hidden md:flex flex-col w-[400px] border-r border-[#e9edef] bg-white">
+        <!-- Sidebar Header -->
+        <div class="h-[60px] bg-[#f0f2f5] flex items-center justify-between px-4 border-b border-[#e9edef]">
+          <div class="w-10 h-10 rounded-full bg-[#dfe5e7] flex items-center justify-center text-[#54656f]">
+            <mat-icon>person</mat-icon>
+          </div>
+          <div class="flex space-x-4 text-[#54656f]">
+            <mat-icon class="cursor-pointer" (click)="showStats.set(!showStats())" [class.text-[#00a884]]="showStats()">analytics</mat-icon>
+            <mat-icon class="cursor-pointer">groups</mat-icon>
+            <mat-icon class="cursor-pointer">donut_large</mat-icon>
+            <mat-icon class="cursor-pointer">chat</mat-icon>
+            <mat-icon class="cursor-pointer" (click)="reset()">logout</mat-icon>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="p-2 bg-white">
+          <div class="bg-[#f0f2f5] rounded-lg flex items-center px-3 py-1.5">
+            <mat-icon class="text-[#54656f] text-sm mr-4">search</mat-icon>
+            <input 
+              type="text" 
+              [ngModel]="searchQuery()" 
+              (ngModelChange)="searchQuery.set($event)"
+              placeholder="Search messages" 
+              class="bg-transparent border-none outline-none text-sm w-full placeholder-[#667781]"
+            >
+          </div>
+        </div>
+
+        <!-- Participants List / Self Selector / Timeline / Stats -->
+        <div class="flex-1 overflow-y-auto">
+          @if (showStats()) {
+            <div class="px-4 py-3 bg-white border-b border-[#f0f2f5] animate-in slide-in-from-left duration-300 space-y-4">
+              <!-- Stats Card -->
+              <div class="bg-[#f0f2f5] p-3 rounded-xl space-y-2">
+                <h3 class="text-xs font-bold text-[#41525d] uppercase tracking-wider">Chat Summary</h3>
+                @if (chatStats(); as stats) {
+                  <div class="grid grid-cols-2 gap-2 text-[11px]">
+                    <div class="flex flex-col">
+                      <span class="text-[#8696a0]">Started</span>
+                      <span class="font-medium">{{ stats.startDate | date:'mediumDate' }}</span>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-[#8696a0]">Last Message</span>
+                      <span class="font-medium">{{ stats.endDate | date:'mediumDate' }}</span>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-[#8696a0]">Total Messages</span>
+                      <span class="font-medium">{{ stats.totalMessages }}</span>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-[#8696a0]">Media Items</span>
+                      <span class="font-medium">{{ stats.mediaCount }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div>
+                <h3 class="text-xs font-semibold text-[#00a884] uppercase tracking-wider mb-2">Timeline</h3>
+                <p class="text-[10px] text-[#8696a0] mb-4">Jump to a specific month in history.</p>
+                
+                <div class="space-y-1 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                  @for (item of chatTimeline(); track item.timestamp) {
+                    <button 
+                      (click)="jumpToDate(item.timestamp)"
+                      class="w-full text-left p-2 rounded hover:bg-[#f0f2f5] text-sm text-[#111b21] transition-colors flex justify-between items-center"
+                    >
+                      <span>{{ item.label }}</span>
+                      <mat-icon class="text-xs text-[#8696a0]">chevron_right</mat-icon>
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="px-4 py-3 bg-white border-b border-[#f0f2f5]">
+            <h3 class="text-xs font-semibold text-[#00a884] uppercase tracking-wider mb-2">Participants</h3>
+            <p class="text-[10px] text-[#8696a0] mb-4">Select who "You" are to align messages.</p>
+            
+            <div class="space-y-1">
+              @for (p of participants(); track p.id) {
+                <div 
+                  (click)="setSelf(p.id)"
+                  (keydown.enter)="setSelf(p.id)"
+                  tabindex="0"
+                  class="flex items-center p-3 rounded-lg cursor-pointer transition-colors focus:outline-none focus:bg-[#f5f6f6]"
+                  [class.bg-[#f0f2f5]]="selfId() === p.id"
+                  [class.hover:bg-[#f5f6f6]]="selfId() !== p.id"
+                >
+                  <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-sm" [style.backgroundColor]="p.color">
+                    {{ p.initials }}
+                  </div>
+                  <div class="flex-1 border-b border-[#f0f2f5] pb-3 last:border-0">
+                    <div class="flex justify-between items-baseline">
+                      <span class="font-medium text-[#111b21]">{{ p.fullName }}</span>
+                      @if (selfId() === p.id) {
+                        <span class="text-[10px] bg-[#00a884] text-white px-1.5 py-0.5 rounded uppercase font-bold">You</span>
+                      }
+                    </div>
+                    <p class="text-xs text-[#667781] truncate">{{ p.messageCount }} messages</p>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Area -->
+      <div class="flex-1 flex flex-col bg-[#efeae2] relative">
+        <!-- Chat Background Pattern Overlay -->
+        <div class="absolute inset-0 opacity-[0.06] pointer-events-none" style="background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-repeat: repeat;"></div>
+
+        <!-- Chat Header -->
+        <div class="h-[60px] bg-[#f0f2f5] flex items-center justify-between px-4 border-b border-[#e9edef] z-10 shadow-sm">
+          <div class="flex items-center">
+            <div 
+              class="md:hidden mr-3 cursor-pointer p-1 rounded-full hover:bg-black/5 focus:outline-none" 
+              (click)="reset()"
+              (keydown.enter)="reset()"
+              tabindex="0"
+            >
+              <mat-icon class="text-[#54656f]">arrow_back</mat-icon>
+            </div>
+            
+            @if (otherParticipant(); as other) {
+              <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mr-3 shadow-sm" [style.backgroundColor]="other.color">
+                {{ other.initials }}
+              </div>
+              <div class="overflow-hidden">
+                <h2 class="font-medium text-[#111b21] leading-tight truncate">{{ other.fullName }}</h2>
+                <p class="text-xs text-[#667781]">online</p>
+              </div>
+            } @else {
+              <div class="w-10 h-10 rounded-full bg-[#dfe5e7] flex items-center justify-center text-[#54656f] mr-3">
+                <mat-icon>group</mat-icon>
+              </div>
+              <div class="overflow-hidden">
+                <h2 class="font-medium text-[#111b21] leading-tight truncate">{{ chatTitle() }}</h2>
+                <p class="text-xs text-[#667781]">{{ participants().length }} participants</p>
+              </div>
+            }
+          </div>
+          
+          <div class="flex items-center space-x-5 text-[#54656f]">
+            @if (chatAge(); as age) {
+              <div class="hidden xl:flex flex-col items-end mr-4 border-r border-gray-300 pr-4">
+                <span class="text-[10px] uppercase font-bold text-[#00a884]">Chat Age</span>
+                <div class="flex space-x-1 text-xs font-mono text-[#111b21]">
+                  @if (age.years > 0) { <span>{{ age.years }}y</span> }
+                  @if (age.months > 0) { <span>{{ age.months }}mo</span> }
+                  @if (age.days > 0) { <span>{{ age.days }}d</span> }
+                  <span>{{ age.hours.toString().padStart(2, '0') }}:{{ age.minutes.toString().padStart(2, '0') }}:{{ age.seconds.toString().padStart(2, '0') }}</span>
+                </div>
+              </div>
+            }
+            @if (chatStats(); as stats) {
+              <div class="hidden lg:flex flex-col items-end mr-4 border-r border-gray-300 pr-4">
+                <span class="text-[10px] uppercase font-bold text-[#00a884]">Total Duration</span>
+                <span class="text-xs font-medium text-[#111b21]">{{ stats.duration }}</span>
+              </div>
+            }
+            <mat-icon class="cursor-pointer">search</mat-icon>
+            <mat-icon class="cursor-pointer">more_vert</mat-icon>
+          </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div #scrollContainer class="flex-1 overflow-y-auto p-4 md:px-16 space-y-2 z-0 scroll-smooth" (scroll)="onScroll($event)">
+          @if (groupedMessages().length === 0) {
+            <div class="flex flex-col items-center justify-center h-full text-[#667781] space-y-2">
+              <mat-icon class="text-4xl">search_off</mat-icon>
+              <p>No messages found matching your search.</p>
+            </div>
+          }
+
+          @for (group of groupedMessages(); track group.date) {
+            <div class="relative pb-2">
+              <!-- Date Separator -->
+              <div class="flex justify-center py-4 sticky top-0 z-20 pointer-events-none">
+                <span class="system-message uppercase font-medium pointer-events-auto !my-0">
+                  {{ group.date }}
+                </span>
+              </div>
+
+              <div class="space-y-1">
+                @for (msg of group.messages; track msg.id) {
+                  @if (msg.type === MessageType.SYSTEM) {
+                    <div class="flex justify-center">
+                      <span class="system-message">
+                        {{ msg.content }}
+                      </span>
+                    </div>
+                  } @else {
+                <div 
+                  class="flex w-full mb-1"
+                  [class.justify-end]="msg.senderId === selfId()"
+                  [class.justify-start]="msg.senderId !== selfId()"
+                >
+                  <div 
+                    class="max-w-[85%] md:max-w-[65%] rounded-lg px-2.5 py-1.5 relative group message-bubble"
+                    [class.sent-bubble]="msg.senderId === selfId()"
+                    [class.received-bubble]="msg.senderId !== selfId()"
+                    [class.rounded-tr-none]="msg.senderId === selfId()"
+                    [class.rounded-tl-none]="msg.senderId !== selfId()"
+                    [attr.title]="formatFullDate(msg.timestamp)"
+                  >
+                    <!-- Tail SVG -->
+                    @if (msg.senderId === selfId()) {
+                      <div class="absolute -right-2 top-0 text-[#d9fdd3]">
+                        <svg viewBox="0 0 8 13" width="8" height="13"><path opacity=".13" d="M5.188 1H0v11.193l6.467-8.625C7.526 2.156 6.958 1 5.188 1z"></path><path fill="currentColor" d="M5.188 0H0v11.193l6.467-8.625C7.526 1.156 6.958 0 5.188 0z"></path></svg>
+                      </div>
+                    } @else {
+                      <div class="absolute -left-2 top-0 text-white">
+                        <svg viewBox="0 0 8 13" width="8" height="13"><path opacity=".13" fill="#000" d="M1.533 3.568 8 12.193V1H2.812C1.042 1 .474 2.156 1.533 3.568z"></path><path fill="currentColor" d="M1.533 2.568 8 11.193V0H2.812C1.042 0 .474 1.156 1.533 2.568z"></path></svg>
+                      </div>
+                    }
+
+                    <!-- Sender Name (if group chat) -->
+                    @if (participants().length > 2 && msg.senderId !== selfId()) {
+                      <div class="text-[12.5px] font-bold mb-0.5" [style.color]="getSenderColor(msg.senderId)">
+                        {{ msg.senderName }}
+                      </div>
+                    }
+
+                    <!-- Message Content -->
+                    <div class="flex flex-col">
+                      <div class="text-[14.2px] leading-relaxed whitespace-pre-wrap break-words">
+                        @if (msg.type !== MessageType.TEXT) {
+                          <div class="flex items-center p-2 rounded border-l-4"
+                            [class.text-[#667781]]="msg.type !== MessageType.MISSED_CALL"
+                            [class.text-[#ef4444]]="msg.type === MessageType.MISSED_CALL"
+                            [class.italic]="msg.type.includes('omitted') || msg.type === MessageType.DELETED"
+                            [class.bg-black/5]="msg.type !== MessageType.DELETED"
+                            [class.border-[#00a884]]="msg.type.includes('omitted')"
+                            [class.border-[#ef4444]]="msg.type === MessageType.MISSED_CALL"
+                            [class.border-[#8696a0]]="msg.type === MessageType.DELETED || msg.type === MessageType.CALL_DURATION"
+                          >
+                            <mat-icon class="text-sm mr-2">
+                              @switch (msg.type) {
+                                @case (MessageType.IMAGE_OMITTED) { image }
+                                @case (MessageType.VIDEO_OMITTED) { videocam }
+                                @case (MessageType.AUDIO_OMITTED) { mic }
+                                @case (MessageType.STICKER_OMITTED) { sticky_note_2 }
+                                @case (MessageType.DOCUMENT_OMITTED) { description }
+                                @case (MessageType.GIF_OMITTED) { gif }
+                                @case (MessageType.LOCATION_OMITTED) { location_on }
+                                @case (MessageType.CONTACT_OMITTED) { person }
+                                @case (MessageType.MISSED_CALL) { call_missed }
+                                @case (MessageType.CALL_DURATION) { call }
+                                @case (MessageType.DELETED) { block }
+                                @default { perm_media }
+                              }
+                            </mat-icon>
+                            <span>{{ msg.content }}</span>
+                          </div>
+                        } @else {
+                          <span [innerHTML]="highlightSearch(msg.content)"></span>
+                        }
+                      </div>
+                      
+                      <!-- Timestamp (Down the text) -->
+                      <div class="flex items-center justify-end space-x-1 mt-1 -mb-0.5">
+                        <span class="text-[9px] text-[#8696a0] font-medium mr-1">{{ getTimeAgo(msg.timestamp) }}</span>
+                        <span class="text-[11px] text-[#667781] uppercase">{{ msg.time }}</span>
+                        @if (msg.senderId === selfId()) {
+                          <mat-icon class="text-[16px] text-[#53bdeb] leading-none h-4 w-4">done_all</mat-icon>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+        <!-- Jump to Bottom Button -->
+        @if (showJumpToBottom()) {
+          <button 
+            (click)="scrollToBottom()"
+            class="absolute bottom-20 right-6 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-[#54656f] hover:bg-[#f0f2f5] transition-all animate-in fade-in slide-in-from-bottom-4 duration-300 z-20"
+          >
+            <mat-icon>keyboard_double_arrow_down</mat-icon>
+          </button>
+        }
+
+        <!-- Fake Input Bar -->
+        <div class="h-[62px] bg-[#f0f2f5] flex items-center px-4 py-2 space-x-4 z-10">
+          <div class="flex space-x-4 text-[#54656f]">
+            <mat-icon class="cursor-pointer">sentiment_satisfied_alt</mat-icon>
+            <mat-icon class="cursor-pointer">add</mat-icon>
+          </div>
+          <div class="flex-1 bg-white rounded-lg px-4 py-2 text-sm text-[#667781] cursor-not-allowed">
+            Type a message (Viewer mode)
+          </div>
+          <mat-icon class="text-[#54656f] cursor-pointer">mic</mat-icon>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- Loading Overlay -->
+  @if (isLoading()) {
+    <div class="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[100]">
+      <div class="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center space-y-4">
+        <div class="w-12 h-12 border-4 border-[#00a884] border-t-transparent rounded-full animate-spin"></div>
+        <p class="font-medium text-[#41525d]">Parsing chat history...</p>
+      </div>
+    </div>
+  }
+</div>
